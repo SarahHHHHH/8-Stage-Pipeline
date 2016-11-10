@@ -39,13 +39,35 @@ int main(int argc, char **argv)
    trace_file_name = argv[1];
    if (argc == 3) trace_view_on = atoi(argv[2]) ;
    // here you should extract the cache parameters from the configuration file (cache size, associativity, latency)
-   unsigned int L1size = 16;
-   unsigned int bsize = 32;
-   unsigned int L1assoc = 4;
+   unsigned int L1size = 0;
+   unsigned int bsize = 0;
+   unsigned int L1assoc = 0;
    unsigned int L2size = 0;
    unsigned int L2assoc = 0;
-   unsigned int L2_hit_latency = 6;
-   unsigned int mem_latency = 100;
+   unsigned int L2_hit_latency = 0;
+   unsigned int mem_latency = 0;
+
+   FILE * pFile;
+
+   pFile = fopen ("cache_config.txt","r");
+   if (pFile!=NULL) {
+      fscanf(pFile, "%d", &L1size);
+      fscanf(pFile, "%d", &bsize);
+      fscanf(pFile, "%d", &L1assoc);
+      fscanf(pFile, "%d", &L2size);
+      fscanf(pFile, "%d", &L2assoc);
+      fscanf(pFile, "%d", &L2_hit_latency);
+      fscanf(pFile, "%d", &mem_latency);
+      fclose (pFile);
+   }
+
+   fprintf(stdout, "L1size: %d\n", L1size);
+   fprintf(stdout, "bsize: %d\n", bsize);
+   fprintf(stdout, "L1assoc: %d\n", L1assoc);
+   fprintf(stdout, "L2size: %d\n", L2size);
+   fprintf(stdout, "L2assoc: %d\n", L2assoc);
+   fprintf(stdout, "L2_hit_latency: %d\n", L2_hit_latency);
+   fprintf(stdout, "mem_latency: %d\n", mem_latency);
 
    fprintf(stdout, "\n ** opening file %s\n", trace_file_name);
 
