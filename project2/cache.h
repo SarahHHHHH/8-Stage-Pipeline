@@ -25,7 +25,7 @@ struct cache_t {
 struct cache_t *cache_create(int size, int blocksize, int assoc, int latency)
 {
    int i;
-   int nblocks = (size * 8000) / blocksize;			// number of blocks in the cache
+   int nblocks = (size * 1024) / blocksize;			// number of blocks in the cache
    int nsets = nblocks / assoc;			// number of sets (entries) in the cache
 
    printf("blocks: %d\n", nblocks);

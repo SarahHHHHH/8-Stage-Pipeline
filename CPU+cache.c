@@ -22,25 +22,25 @@ int main(int argc, char **argv)
     size_t size;
     char *trace_file_name;
     int trace_view_on = 0;
-    
+
     unsigned char t_type = 0;
     unsigned char t_sReg_a= 0;
     unsigned char t_sReg_b= 0;
     unsigned char t_dReg= 0;
     unsigned int t_PC = 0;
     unsigned int t_Addr = 0;
-    
+
     unsigned int cycle_number = 0;
-    
+
     if (argc == 1) {
         fprintf(stdout, "\nUSAGE: tv <trace_file> <switch - any character>\n");
         fprintf(stdout, "\n(switch) to turn on or off individual item view.\n\n");
         exit(0);
     }
-    
+
     trace_file_name = argv[1];
     if (argc == 3) trace_view_on = atoi(argv[2]) ;
-    
+
     //############################################################
     // here you should extract the cache parameters from the configuration file (cache size, associativity, latency)
     unsigned int L1size = 0;
@@ -50,68 +50,68 @@ int main(int argc, char **argv)
     unsigned int L2assoc = 0;
     unsigned int L2_hit_latency = 0;
     unsigned int mem_latency = 0;
-    
+
     //reading from cache_config.txt
     FILE *config_fd;
     char *line = NULL;
     size_t len = 0;
     int i;
-    
+
     config_fd = fopen("cache_config.txt", "r");
     if (!config_fd) {
         fprintf(stdout, "\n cache_config.txt not opened.\n\n");
         exit(0);
     }
-    
+
     getline(&line, &len, config_fd);
     L1size = atoi(line);
-    
+
     getline(&line, &len, config_fd);
     bsize = atoi(line);
-    
+
     getline(&line, &len, config_fd);
     L1assoc = atoi(line);
-    
+
     getline(&line, &len, config_fd);
     L2size = atoi(line);
-    
+
     getline(&line, &len, config_fd);
     L2assoc = atoi(line);
-    
+
     getline(&line, &len, config_fd);
     L2_hit_latency = atoi(line);
-    
+
     size_t rer = getline(&line, &len, config_fd);
     mem_latency = atoi(line);
-    
+
     fclose(config_fd);
     //############################################################
-    
+
     fprintf(stdout, "\n ** opening file %s\n", trace_file_name);
-    
+
     trace_fd = fopen(trace_file_name, "rb");
-    
+
     if (!trace_fd) {
         fprintf(stdout, "\ntrace file %s not opened.\n\n", trace_file_name);
         exit(0);
     }
-    
+
     trace_init();
-    
+
     //############################################################
     struct cache_t *L1, *L2, *nextL;
-    L1 = cache_create(L1size, bsize, L1assoc, 0, mem_latency);
+    L1 = cache_create(L1size, bsize, L1assoc, 0);
     nextL = NULL;   // the next level in the hierarchy -- NULL indicates main memory
     if (L2size != 0)
     {
-        L2 = cache_create(L2size, bsize, L2assoc, L2_hit_latency, mem_latency);
+        L2 = cache_create(L2size, bsize, L2assoc, L2_hit_latency);
         nextL = L2;
     }
     //############################################################
-    
+
     while(1) {
         size = trace_get_item(&tr_entry);
-        
+
         if (!size) {       /* no more instructions (trace_items) to simulate */
             printf("+ Simulation terminates at cycle : %u\n", cycle_number);
             //############################################################
@@ -122,11 +122,11 @@ int main(int argc, char **argv)
             printf("+ Hits L1 : %u\n", L1hits);
             printf("+ Misses L1 : %u\n", L1misses);
             printf("+ Miss rate L1 : %u/%u\n", L1misses, accesses);
-//            if (L2size > 0) {
-//                printf("+ Hits L2 : %u\n", L2hits);
-//                printf("+ Misses L2 : %u\n", L2misses);
-//                printf("+ Miss rate L1 : %u/%u\n", L2misses, L2hits + L2misses);
-//            }
+           if (L2size > 0) {
+               printf("+ Hits L2 : %u\n", L2hits);
+               printf("+ Misses L2 : %u\n", L2misses);
+               printf("+ Miss rate L1 : %u/%u\n", L2misses, L2hits + L2misses);
+           }
             //############################################################
             break;
         }
@@ -139,10 +139,10 @@ int main(int argc, char **argv)
             t_PC = tr_entry->PC;
             t_Addr = tr_entry->Addr;
         }
-        
+
         // SIMULATION OF A SINGLE CYCLE cpu IS TRIVIAL - EACH INSTRUCTION IS EXECUTED
         // IN ONE CYCLE, EXCEPT IF THERE IS A DATA CACHE MISS.
-        
+
         switch(tr_entry->type) {
             case ti_NOP:
                 if (trace_view_on) printf("[cycle %d] NOP:", cycle_number);
@@ -166,7 +166,7 @@ int main(int argc, char **argv)
                 };
                 accesses++;
                 read_accesses++;
-                cycle_number = cycle_number + cache_access(L1, tr_entry->Addr, 'r', cycle_number, nextL);
+                cycle_number = cycle_number + cache_access(L1, tr_entry->Addr, 'r', cycle_number, nextL, mem_latency);
                 break;
             case ti_STORE:
                 if (trace_view_on){
@@ -175,7 +175,7 @@ int main(int argc, char **argv)
                 };
                 accesses++;
                 write_accesses++;
-                cycle_number = cycle_number + cache_access(L1, tr_entry->Addr, 'w', cycle_number, nextL);
+                cycle_number = cycle_number + cache_access(L1, tr_entry->Addr, 'w', cycle_number, nextL, mem_latency);
                 break;//############################################################
             case ti_BRANCH:
                 if (trace_view_on) {
@@ -199,11 +199,10 @@ int main(int argc, char **argv)
                 };
                 break;
         }
-        
+
     }
-    
+
     trace_uninit();
-    
+
     exit(0);
 }
-
