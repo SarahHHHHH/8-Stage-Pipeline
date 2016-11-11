@@ -41,7 +41,7 @@ struct cache_t *cache_create(int size, int blocksize, int assoc, int latency)
 
    for(i = 0; i < nsets; i++) {
       struct cache_blk_t *block = (struct cache_blk_t *)calloc(assoc, sizeof(struct cache_blk_t));
-      block->dirty = '1';
+      block->valid = '0';
       C->blocks[i] = block;
    }
 
@@ -69,30 +69,27 @@ int check_read_hit(struct cache_t *cp, unsigned long address, unsigned long long
       }
    }
 
-   unsigned long long min_time;
-   // not found in cache so we should add it
+   // TODO: replace this with max long
+   unsigned long long min_time = 1000000000;
+   // find the LRU
    for (i = 0; i < nsets ; i++) {
       for (j = 0; j < assoc; j++) {
          struct cache_blk_t *thisblock = &blocks[i][j];
-         if (thisblock->dirty == '1') {
-            // the block is dirty so we can replace it
+         if (thisblock->valid == '0') {
             // TODO: convert address to tag
             thisblock->tag = address;
-            // store the cycle_number so we can do LRU
             thisblock->ts = now;
             thisblock->valid = '1';
             thisblock->dirty = '0';
             return 0;
          }
-         if (thisblock->valid == '1') {
-            if (thisblock->ts < min_time) {
-               min_time = thisblock->ts;
-            }
+         if (thisblock->ts < min_time) {
+            min_time = thisblock->ts;
          }
       }
    }
 
-   // Replace the least recently used item
+   // Replace the LRU
    for (i = 0; i < nsets ; i++) {
       for (j = 0; j < assoc; j++) {
          struct cache_blk_t *thisblock = &blocks[i][j];
