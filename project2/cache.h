@@ -133,7 +133,7 @@ int check_write_hit(struct cache_t *cp, unsigned long address, unsigned long lon
          }
       }
    }
-   
+
    return 0;
 }
 
@@ -152,6 +152,12 @@ int cache_access(struct cache_t *cp, unsigned long address, char access_type, un
             L2misses++;
          }
          return cache_access(next_cp, address, 'r', now, NULL);
+      } else {
+         if (cp->hit_latency == 0) {
+            L1hits++;
+         } else {
+            L2hits++;
+         }
       }
    } else if (access_type == 'w') {
       if (!check_write_hit(cp, address, now)) {
@@ -161,6 +167,12 @@ int cache_access(struct cache_t *cp, unsigned long address, char access_type, un
             L2misses++;
          }
          return cache_access(next_cp, address, 'w', now, NULL);
+      } else {
+         if (cp->hit_latency == 0) {
+            L1hits++;
+         } else {
+            L2hits++;
+         }
       }
    }
    //
