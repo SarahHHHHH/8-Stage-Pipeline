@@ -62,13 +62,12 @@ int check_read_hit(struct cache_t *cp, unsigned long address, unsigned long long
             // TODO: convert address to tag
             if (thisblock->tag == address) {
                // HIT
+               thisblock->ts = now;
                return 1;
             }
          }
       }
    }
-
-   printf("inserting: %lu\n", address);
 
    unsigned long long min_time;
    // not found in cache so we should add it
@@ -77,7 +76,7 @@ int check_read_hit(struct cache_t *cp, unsigned long address, unsigned long long
          struct cache_blk_t *thisblock = &blocks[i][j];
          if (thisblock->dirty == '1') {
             // the block is dirty so we can replace it
-            // TODO: conver address to tag
+            // TODO: convert address to tag
             thisblock->tag = address;
             // store the cycle_number so we can do LRU
             thisblock->ts = now;
@@ -99,7 +98,7 @@ int check_read_hit(struct cache_t *cp, unsigned long address, unsigned long long
          struct cache_blk_t *thisblock = &blocks[i][j];
          if (min_time == thisblock->ts) {
             if (thisblock->ts < min_time) {
-               // TODO: conver address to tag
+               // TODO: convert address to tag
                thisblock->tag = address;
                // store the cycle_number so we can do LRU
                thisblock->ts = now;
@@ -117,7 +116,7 @@ int check_read_hit(struct cache_t *cp, unsigned long address, unsigned long long
 int cache_access(struct cache_t *cp, unsigned long address, char access_type, unsigned long long now, struct cache_t *next_cp)
 {
    if (cp == NULL) {
-      // this should return mem_latency
+      // TODO: this should return mem_latency
       return 100;
    }
    if (access_type == 'r') {
