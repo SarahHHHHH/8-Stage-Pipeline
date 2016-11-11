@@ -110,6 +110,33 @@ int check_read_hit(struct cache_t *cp, unsigned long address, unsigned long long
    return 0;
 }
 
+
+int check_write_hit(struct cache_t *cp, unsigned long address, unsigned long long now) {
+   struct cache_blk_t **blocks = cp->blocks;
+   int nsets = cp->nsets;
+   int assoc = cp->assoc;
+   int i, j;
+
+   // Find the address in the cache
+   for (i = 0; i < nsets ; i++) {
+      for (j = 0; j < assoc; j++) {
+         struct cache_blk_t *thisblock = &blocks[i][j];
+         if (thisblock->valid == '1') {
+            // TODO: convert address to tag
+            if (thisblock->tag == address) {
+               // Its a hit so mark it dirty
+               thisblock->ts = now;
+               thisblock->valid = '1';
+               thisblock->dirty = '1';
+               return 1;
+            }
+         }
+      }
+   }
+   
+   return 0;
+}
+
 int cache_access(struct cache_t *cp, unsigned long address, char access_type, unsigned long long now, struct cache_t *next_cp)
 {
    if (cp == NULL) {
@@ -127,7 +154,14 @@ int cache_access(struct cache_t *cp, unsigned long address, char access_type, un
          return cache_access(next_cp, address, 'r', now, NULL);
       }
    } else if (access_type == 'w') {
-
+      if (!check_write_hit(cp, address, now)) {
+         if (cp->hit_latency == 0) {
+            L1misses++;
+         } else {
+            L2misses++;
+         }
+         return cache_access(next_cp, address, 'w', now, NULL);
+      }
    }
    //
    // Based on address, determine the set to access in cp and examine the blocks
