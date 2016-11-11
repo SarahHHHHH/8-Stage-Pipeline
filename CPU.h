@@ -1,3 +1,4 @@
+#include <stdlib.h> //takes care of the implicit definitions, but we'll see if it changes anything.
 
 #ifndef TRACE_ITEM_H
 #define TRACE_ITEM_H
@@ -61,6 +62,10 @@ void trace_init()
 
 	trace_buf_ptr = 0;
 	trace_buf_end = 0;
+}
+
+void predict_init() {
+    
 }
 
 void trace_uninit()
